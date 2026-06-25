@@ -17,24 +17,70 @@ Re-read the spec file to understand the full rule, its examples, and its counter
 
 ## Structure
 
-One outer class per feature, named `<Feature>AcceptanceIT`.
+One test class per story/feature, named `<Feature>AcceptanceIT`.
 One `@Nested` inner class per rule — name it after the rule.
-One `@Test` per example from the spec.
+One `@Test` per example AND per counter-example from the spec.
 
 Use `@DisplayName` with the spec's exact business language:
-- Class: the rule name
-- Method: the "The one where…" text from the spec
+- Outer class: the feature name
+- `@Nested` class: the rule
+- Method: the "The one where…" text from the spec (counter-examples too)
+
+`@Nested` classes inherit the outer class's Spring context (`@NestedTestConfiguration`
+defaults to `INHERIT`), so annotate and `@Autowired` the test client once on the outer class.
+See `.claude/skills/tdd/SKILL.md` → "Acceptance test" for the full worked template.
 
 ## How to test
 
-Test through the REST API using `@SpringBootTest` + MockMvc.
-Send real HTTP requests. Assert real HTTP responses.
-NEVER call services or domain objects directly —
-this is an acceptance test, not a unit test.
+Test through the REST API. This service runs on **Spring Boot 4** (JUnit 6), so use
+`@SpringBootTest` + `@AutoConfigureMockMvc` and inject the AssertJ-based `MockMvcTester`
+(`org.springframework.test.web.servlet.assertj.MockMvcTester`) — NOT the old
+`mockMvc.perform(...).andExpect(...)` chain, and NOT `@MockBean` (removed in Boot 4).
 
-Assert exact values from the spec examples.
-For money: `.andExpect(jsonPath("$.amount").value("1.60"))`
-or use `isEqualByComparingTo` with `BigDecimal`.
+`@AutoConfigureMockMvc` lives in `org.springframework.boot.webmvc.test.autoconfigure`
+and needs the `spring-boot-starter-webmvc-test` test dependency.
+
+Send real HTTP requests. Assert real HTTP responses.
+NEVER call services or domain objects directly — this is an acceptance test, not a unit test.
+
+Skeleton (replace the placeholder `<Feature>` / `<rule>` / endpoint with the spec's):
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+@DisplayName("<feature name>")
+class <Feature>AcceptanceIT {
+
+    @Autowired
+    private MockMvcTester mvc;
+
+    @Nested
+    @DisplayName("<the rule, in the spec's words>")
+    class <Rule> {
+        @Test
+        @DisplayName("The one where <the example>")
+        void <example>() {
+            MvcTestResult result = mvc.post().uri("/api/<resource>")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                            { ...request fields from the example... }
+                            """)
+                    .exchange();
+
+            assertThat(result).hasStatusOk();
+            assertThat(result).bodyJson()
+                    .extractingPath("$.<field>")
+                    .convertTo(InstanceOfAssertFactories.BIG_DECIMAL)
+                    .isEqualByComparingTo("<expected>");
+        }
+    }
+}
+```
+
+Assert exact values from the spec examples. For money, compare with `compareTo`, never
+`equals`: `extractingPath("$.amount").convertTo(InstanceOfAssertFactories.BIG_DECIMAL).isEqualByComparingTo("1.60")`.
+Do NOT use `.asNumber().isEqualTo(new BigDecimal(...))` — it compares a parsed `Double`
+to a `BigDecimal` and fails.
 
 ## What NOT to do
 

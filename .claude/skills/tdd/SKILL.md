@@ -423,9 +423,44 @@ class OrderLineRestClientIT {
 }
 ```
 
+## Data-driven rules → parameterized tests, not one test per row
+
+When a rule is a table — a rate table, a set of boundary values, an input →
+output mapping — drive it with a **single JUnit 6 `@ParameterizedTest`**, one
+case per row, at whatever tier proves the rule. Don't copy-paste a `@Test` per
+row. The spec's table becomes the data source; counter-examples are just more
+rows. (`junit-jupiter-params` ships with `spring-boot-starter-test`.)
+
+Service tier — `@CsvSource` with implicit String → `int` / enum conversion:
+
+```java
+@ParameterizedTest(name = "The one where {0} items is the {1} size")
+@CsvSource({
+        "1,  STANDARD",
+        "9,  STANDARD",
+        "10, BULK",
+        "20, BULK",
+})
+void quantityFallsInSize(int quantity, OrderSize expected) {
+    assertThat(OrderSize.forQuantity(quantity)).isEqualTo(expected);
+}
+```
+
+Template the row into `name` so each case still reads as "The one where…" in the
+report. Keep boundaries explicit — include the row on each side of where the
+classification flips (here `9` vs `10`), the same boundaries you'd have written
+as separate `@Test`s.
+
+**Fits the inner loop:** a new boundary is still the next RED — add a *row* to
+the existing `@ParameterizedTest`, don't spawn a new `@Test`. The cycle stays
+one-case-at-a-time; the rule converges as a single parameterized test. For
+tables driven by existing constants/enums, or longer than ~6 rows, prefer
+`@MethodSource` / `@FieldSource` over a wall of `@CsvSource` strings.
+
 ## Naming & convention reminders
 
 - Method names state the rule (`tenItemsIsBulk`), never a number (`testCalculate3`).
 - `@DisplayName` is a plain-language, Example-Mapping line: `"The one where 3 items at £2.50 total £7.50"`.
 - Acceptance classes end in `IT`; one class per story/feature in `acceptance/`, a `@Nested` class per rule (named by `@DisplayName`), one `@Test` per example / counter-example.
 - Money: `BigDecimal`, scale 2, `RoundingMode.HALF_UP`, assert with `isEqualByComparingTo`.
+- Data-driven rules (rate tables, boundary sets, input → output maps) are ONE `@ParameterizedTest` with a case per row — never one copy-pasted `@Test` per row. Template the row into `@ParameterizedTest(name = …)` to keep the "The one where…" voice.

@@ -19,7 +19,13 @@ Re-read the spec file to understand the full rule, its examples, and its counter
 
 One test class per story/feature, named `<Feature>AcceptanceIT`.
 One `@Nested` inner class per rule — name it after the rule.
-One `@Test` per example AND per counter-example from the spec.
+One `@Test` per example AND per counter-example from the spec — **unless the rule is data-driven**.
+
+When a rule's examples form a table — several rows of the same shape (a rate
+table, a set of boundary values, an input → output mapping) — render it as a
+single JUnit 6 `@ParameterizedTest` with one case per row, **not** one `@Test`
+per row. The spec's table becomes the `@CsvSource`; counter-example rows are
+just more rows. See "Data-driven rules" below.
 
 Use `@DisplayName` with the spec's exact business language:
 - Outer class: the feature name
@@ -81,6 +87,50 @@ Assert exact values from the spec examples. For money, compare with `compareTo`,
 `equals`: `extractingPath("$.amount").convertTo(InstanceOfAssertFactories.BIG_DECIMAL).isEqualByComparingTo("1.60")`.
 Do NOT use `.asNumber().isEqualTo(new BigDecimal(...))` — it compares a parsed `Double`
 to a `BigDecimal` and fails.
+
+## Data-driven rules → one parameterized test
+
+If the rule's examples are a table of same-shaped rows, use a single
+`@ParameterizedTest` inside the `@Nested` rule class. Keep the Example-Mapping
+voice by templating the row into the `name`, so every case still reads as
+"The one where…" in the report. (`junit-jupiter-params` is already on the
+classpath via `spring-boot-starter-test`.)
+
+```java
+@Nested
+@DisplayName("The line total is the unit price times the quantity")
+class UnitPriceTimesQuantity {
+
+    @ParameterizedTest(name = "The one where {0} items at £{1} total £{2}")
+    @CsvSource({
+            "1, 2.50,  2.50",
+            "3, 2.50,  7.50",
+            "4, 10.00, 40.00",
+    })
+    void lineTotalIsUnitPriceTimesQuantity(String quantity, String unitPrice, String expectedTotal) {
+        MvcTestResult result = mvc.post().uri("/api/order-lines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        { "sku": "A1", "quantity": %s, "unitPrice": %s }
+                        """.formatted(quantity, unitPrice))
+                .exchange();
+
+        assertThat(result).hasStatusOk();
+        assertThat(result).bodyJson()
+                .extractingPath("$.total")
+                .convertTo(InstanceOfAssertFactories.BIG_DECIMAL)
+                .isEqualByComparingTo(expectedTotal);
+    }
+}
+```
+
+Imports: `org.junit.jupiter.params.ParameterizedTest`,
+`org.junit.jupiter.params.provider.CsvSource`. Keep money expectations as
+`String` and assert with `isEqualByComparingTo(...)`. Include the rows on each
+side of a boundary (the last row before a classification flips and the first
+after), exactly the boundaries you'd otherwise write as separate `@Test`s. For more than ~6 rows,
+or when values come from existing constants/enums, switch the source to
+`@MethodSource` / `@FieldSource` so the table stays readable.
 
 ## What NOT to do
 

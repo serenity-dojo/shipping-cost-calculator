@@ -10,27 +10,6 @@
           }
         ]
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./gradlew test -q 2>&1 | tail -20"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./gradlew test 2>&1 | tail -30"
-          }
-        ]
-      }
     ]
   }
 }

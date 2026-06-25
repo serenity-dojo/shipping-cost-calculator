@@ -1,6 +1,6 @@
 # Spring Boot SDD Starter
 
-A starter for building Spring Boot services with a Spec-Driven Development (SDD) workflow. It ships with a `.claude/` toolchain (hooks, agents, commands) that enforces specs, runs tests automatically, and guards architecture boundaries.
+A starter for building Spring Boot services with a Spec-Driven Development (SDD) workflow. It ships with a `.claude/` toolchain (hooks, agents, commands) that drives a test-first workflow, enforces specs, and guards architecture boundaries.
 
 <!-- ADAPT: This file is the single most important input for Claude — it's read
      before any work. Every section below is a working default for a standard
@@ -93,7 +93,7 @@ Conventions:
 - Test method names describe the business rule (`domesticOrderOver75GetsFreeShipping`), not a number (`testCalculate3`).
 - Use `@DisplayName` with plain-language, Example-Mapping-style descriptions: `"The one where a 3kg European parcel costs £7.49"`.
 - Acceptance tests verify the HTTP contract; service tests verify business logic. Don't duplicate the same assertions across both tiers.
-- Run the suite with `./gradlew test`. The `.claude/` hooks run it automatically after edits and when a turn ends.
+- Run the suite with `./gradlew test`. The `/accept` and `/tdd` workflows run it for you as part of each cycle, so you see each test go red and green yourself.
 
 <!-- ADAPT: Change the test directories, the build command, and the example
      names if your conventions differ. Keep the two-tier structure — the
@@ -126,13 +126,13 @@ Spring Security is commented out in `build.gradle` until needed. Adding it locks
 
 The reusable part of the starter — works for any domain:
 
-- **`.claude/settings.json`** — Three hooks: a file guard (PreToolUse), a test runner after edits (PostToolUse), and a test gate when a turn ends (Stop). The test command is `./gradlew test`.
+- **`.claude/settings.json`** — One hook: a file guard (PreToolUse) that blocks edits to sensitive files. Tests are run by the `/accept` and `/tdd` workflows, not by hooks, so the red/green steps of the cycle stay visible.
 - **`.claude/hooks/protect-files.sh`** — Blocks edits to sensitive files via `PROTECTED_PATTERNS`.
 - **`.claude/commands/`** — `/discover` (rule → example → counter-example → edge cases → questions), `/accept` (acceptance test against the real endpoint), `/tdd` (failing test → minimum code → verify → refactor).
 - **`.claude/agents/`** — `spec-compliance` (specs have tests, precision, feature interactions, API contract) and `architecture-guardian` (layer boundaries).
 
-<!-- ADAPT: Change the test command in settings.json if you don't use Gradle.
-     Add your sensitive files to protect-files.sh. Update the domain-specific
+<!-- ADAPT: Change the test command in the /accept and /tdd workflows if you
+     don't use Gradle. Add your sensitive files to protect-files.sh. Update the domain-specific
      content in the command and agent files. Keep the .claude/ structure, the
      hook exit-code convention (exit 2 to block), the $ARGUMENTS placeholder in
      commands, and docs/specs/. -->

@@ -23,7 +23,7 @@ Push each rule to the **lowest tier that can prove it**. Most rules are plain lo
 | Acceptance / full HTTP cycle | `@SpringBootTest` + `@AutoConfigureMockMvc` | full app, mock servlet | The whole wired path end to end, no network |
 | Real network round-trip | `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `RestTestClient` | full app, real server | The app over actual HTTP (smoke / contract) |
 
-Don't assert the same rule in two tiers: acceptance tests verify the HTTP contract, service tests verify the logic.
+Don't *exhaustively* re-test a rule at the acceptance tier: keep one representative, business-readable example there as living documentation, and push the full boundary/edge enumeration down to the service or value-object tier. Overlap on the headline example is by design; replicating the whole table across tiers is the waste to avoid.
 
 ## Dependencies (build.gradle)
 

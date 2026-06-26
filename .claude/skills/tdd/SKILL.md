@@ -30,8 +30,9 @@ the spec rule, and that test is your **goalpost, not your target**. Your job is
 not to make it green in one cycle — it's to drive the sub-rules beneath it
 through RED → GREEN → REFACTOR at the lowest tier that proves each, until the
 acceptance test goes green *as a result*. Expect it to stay red across several
-cycles; never weaken it to get an early green. The acceptance test owns the
-end-to-end contract; your inner cycles own the logic. Invoked without an outer
+cycles; never weaken it to get an early green. The acceptance test documents the
+end-to-end behaviour as living documentation; your inner cycles drive the logic
+beneath it. Invoked without an outer
 acceptance test (driving a value object or service rule directly), the same loop
 applies — there's just no outer goalpost.
 
@@ -85,9 +86,13 @@ All tests are green. Now improve the code:
 - Remove duplication; extract clear names; simplify conditionals
 - Check that the code reads like the spec
 - Refactor the **test** too — extract helpers, dedupe setup and builders
-- If this cycle proved a rule at a lower tier that an acceptance test was also
-  asserting, **delete the duplicate** — don't assert the same rule in two tiers.
-  Acceptance owns the contract, inner loops own the logic.
+- Push *exhaustive* coverage down, not documentation. Once you've proven a rule's
+  boundaries and edge cases at a lower tier, keep the full **enumeration** there —
+  don't re-run every boundary through the whole stack. But **keep at least one
+  clear, representative example of each rule at the acceptance tier**: it's living
+  documentation and must still read as the feature's executable specification.
+  Overlap on that headline example is intentional, not duplication to remove.
+  Inner loops own the exhaustive logic; the acceptance suite documents the rules.
 
 Run ALL tests after refactoring — not just the current one.
 If anything breaks, fix it before moving on.

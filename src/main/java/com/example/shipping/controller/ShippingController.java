@@ -1,5 +1,6 @@
 package com.example.shipping.controller;
 
+import com.example.shipping.model.InvalidOrderTotalException;
 import com.example.shipping.model.InvalidWeightException;
 import com.example.shipping.model.InvalidZoneException;
 import com.example.shipping.model.ShippingCost;
@@ -27,7 +28,7 @@ public class ShippingController {
         return service.calculate(request);
     }
 
-    @ExceptionHandler({InvalidWeightException.class, InvalidZoneException.class})
+    @ExceptionHandler({InvalidWeightException.class, InvalidZoneException.class, InvalidOrderTotalException.class})
     public ResponseEntity<Void> handleInvalidRequest() {
         return ResponseEntity.badRequest().build();
     }

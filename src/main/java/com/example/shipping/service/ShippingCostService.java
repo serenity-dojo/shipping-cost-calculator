@@ -1,5 +1,6 @@
 package com.example.shipping.service;
 
+import com.example.shipping.model.InvalidOrderTotalException;
 import com.example.shipping.model.InvalidWeightException;
 import com.example.shipping.model.InvalidZoneException;
 import com.example.shipping.model.ShippingCost;
@@ -16,12 +17,22 @@ public class ShippingCostService {
         if (weight.compareTo(BigDecimal.ZERO) <= 0 || weight.compareTo(new BigDecimal("50")) > 0) {
             throw new InvalidWeightException("Weight must be greater than 0 and at most 50kg");
         }
+        if (request.orderTotal() == null || request.orderTotal().compareTo(BigDecimal.ZERO) < 0) {
+            throw new InvalidOrderTotalException("Order total must be present and not negative");
+        }
         BigDecimal baseRate = baseRate(weight);
         BigDecimal multiplier = zoneMultiplier(request.zone());
         BigDecimal zonedRate = baseRate.multiply(multiplier);
-        BigDecimal totalCost = zonedRate.setScale(2, RoundingMode.HALF_UP);
+
+        boolean freeShipping = "DOMESTIC".equalsIgnoreCase(request.zone())
+                && request.orderTotal().compareTo(new BigDecimal("75.00")) >= 0
+                && weight.compareTo(new BigDecimal("20")) <= 0;
+
+        BigDecimal totalCost = freeShipping
+                ? new BigDecimal("0.00")
+                : zonedRate.setScale(2, RoundingMode.HALF_UP);
         return new ShippingCost(totalCost,
-                new ShippingCost.Breakdown(baseRate, multiplier, zonedRate, false));
+                new ShippingCost.Breakdown(baseRate, multiplier, zonedRate, freeShipping));
     }
 
     private BigDecimal zoneMultiplier(String zone) {

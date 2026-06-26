@@ -3,6 +3,7 @@ package com.example.shipping.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import com.example.shipping.model.InvalidOrderTotalException;
 import com.example.shipping.model.InvalidWeightException;
 import com.example.shipping.model.InvalidZoneException;
 import com.example.shipping.model.ShippingCost;
@@ -10,6 +11,7 @@ import com.example.shipping.model.ShippingRequest;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -89,6 +91,61 @@ class ShippingCostServiceTest {
             assertThatExceptionOfType(InvalidZoneException.class)
                     .isThrownBy(() -> service.calculate(
                             new ShippingRequest(new BigDecimal("3.0"), zone, new BigDecimal("10.00"))));
+        }
+    }
+
+    @Nested
+    @DisplayName("Must waive shipping (total cost = £0.00) only when the order is Domestic, its order total is at least £75.00, and the parcel weighs 20kg or less")
+    class FreeShippingQualification {
+
+        @ParameterizedTest(name = "The one where {5}")
+        @CsvSource(delimiter = '|', textBlock = """
+                # weightKg | zone          | orderTotal | expectedTotal | freeShipping | description
+                  3.0       | DOMESTIC      | 120.00     | 0.00          | true         | a Domestic 3kg order totalling £120.00 ships free (£0.00)
+                  3.0       | DOMESTIC      | 75.00      | 0.00          | true         | a Domestic 3kg order at exactly the £75.00 threshold ships free
+                  3.0       | DOMESTIC      | 74.99      | 4.99          | false        | a Domestic 3kg order one penny under the threshold pays the full £4.99
+                  20.0      | DOMESTIC      | 120.00     | 0.00          | true         | a Domestic 20kg order at the weight cap still ships free
+                  25.0      | DOMESTIC      | 120.00     | 11.49         | false        | a Domestic 25kg order over the 20kg cap pays the surcharged rate despite a qualifying total
+                  3.0       | EUROPEAN      | 200.00     | 7.49          | false        | a European order never qualifies, regardless of order total
+                  3.0       | INTERNATIONAL | 500.00     | 12.48         | false        | an International order never qualifies, regardless of order total
+                """)
+        void freeShippingAppliesOnlyToQualifyingDomesticOrders(
+                String weightKg, String zone, String orderTotal,
+                String expectedTotal, boolean freeShipping, String description) {
+            ShippingCost cost = service.calculate(
+                    new ShippingRequest(new BigDecimal(weightKg), zone, new BigDecimal(orderTotal)));
+            assertThat(cost.totalCost()).isEqualByComparingTo(expectedTotal);
+            assertThat(cost.breakdown().freeShippingApplied()).isEqualTo(freeShipping);
+        }
+    }
+
+    @Nested
+    @DisplayName("Must require a valid order total on every request, rejecting a missing or negative value")
+    class OrderTotalValidation {
+
+        @ParameterizedTest(name = "The one where an order total of £{0} is rejected as invalid")
+        @ValueSource(strings = {"-10.00", "-0.01"})
+        void negativeOrderTotalIsRejected(String orderTotal) {
+            assertThatExceptionOfType(InvalidOrderTotalException.class)
+                    .isThrownBy(() -> service.calculate(
+                            new ShippingRequest(new BigDecimal("3.0"), "DOMESTIC", new BigDecimal(orderTotal))));
+        }
+
+        @Test
+        @DisplayName("The one where the order total is missing (null) — rejected as invalid")
+        void missingOrderTotalIsRejected() {
+            assertThatExceptionOfType(InvalidOrderTotalException.class)
+                    .isThrownBy(() -> service.calculate(
+                            new ShippingRequest(new BigDecimal("3.0"), "DOMESTIC", null)));
+        }
+
+        @Test
+        @DisplayName("The one where the order total is £0.00 — accepted, priced normally below the threshold")
+        void zeroOrderTotalIsAcceptedAndPaysNormalRate() {
+            ShippingCost cost = service.calculate(
+                    new ShippingRequest(new BigDecimal("3.0"), "DOMESTIC", new BigDecimal("0.00")));
+            assertThat(cost.totalCost()).isEqualByComparingTo("4.99");
+            assertThat(cost.breakdown().freeShippingApplied()).isFalse();
         }
     }
 

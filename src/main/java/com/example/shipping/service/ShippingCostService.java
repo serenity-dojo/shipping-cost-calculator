@@ -24,8 +24,10 @@ public class ShippingCostService {
         BigDecimal multiplier = zoneMultiplier(request.zone());
         BigDecimal zonedRate = baseRate.multiply(multiplier);
 
-        boolean freeShipping = "DOMESTIC".equalsIgnoreCase(request.zone())
-                && request.orderTotal().compareTo(new BigDecimal("75.00")) >= 0
+        boolean qualifyingZone = "DOMESTIC".equalsIgnoreCase(request.zone())
+                || "EUROPEAN".equalsIgnoreCase(request.zone());
+        boolean freeShipping = qualifyingZone
+                && request.orderTotal().compareTo(new BigDecimal("50.00")) >= 0
                 && weight.compareTo(new BigDecimal("20")) <= 0;
 
         BigDecimal totalCost = freeShipping

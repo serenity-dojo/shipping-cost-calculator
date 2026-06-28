@@ -95,21 +95,24 @@ class ShippingCostServiceTest {
     }
 
     @Nested
-    @DisplayName("Must waive shipping (total cost = £0.00) only when the order is Domestic, its order total is at least £75.00, and the parcel weighs 20kg or less")
+    @DisplayName("Must waive shipping (total cost = £0.00) only when the order is Domestic or European, its order total is at least £50.00, and the parcel weighs 20kg or less")
     class FreeShippingQualification {
 
         @ParameterizedTest(name = "The one where {5}")
         @CsvSource(delimiter = '|', textBlock = """
                 # weightKg | zone          | orderTotal | expectedTotal | freeShipping | description
                   3.0       | DOMESTIC      | 120.00     | 0.00          | true         | a Domestic 3kg order totalling £120.00 ships free (£0.00)
-                  3.0       | DOMESTIC      | 75.00      | 0.00          | true         | a Domestic 3kg order at exactly the £75.00 threshold ships free
-                  3.0       | DOMESTIC      | 74.99      | 4.99          | false        | a Domestic 3kg order one penny under the threshold pays the full £4.99
+                  3.0       | DOMESTIC      | 50.00      | 0.00          | true         | a Domestic 3kg order at exactly the £50.00 threshold ships free
+                  3.0       | DOMESTIC      | 49.99      | 4.99          | false        | a Domestic 3kg order one penny under the threshold pays the full £4.99
                   20.0      | DOMESTIC      | 120.00     | 0.00          | true         | a Domestic 20kg order at the weight cap still ships free
                   25.0      | DOMESTIC      | 120.00     | 11.49         | false        | a Domestic 25kg order over the 20kg cap pays the surcharged rate despite a qualifying total
-                  3.0       | EUROPEAN      | 200.00     | 7.49          | false        | a European order never qualifies, regardless of order total
+                  3.0       | EUROPEAN      | 120.00     | 0.00          | true         | a European 3kg order totalling £120.00 now ships free (£0.00)
+                  3.0       | EUROPEAN      | 50.00      | 0.00          | true         | a European 3kg order at exactly the £50.00 threshold ships free
+                  3.0       | EUROPEAN      | 49.99      | 7.49          | false        | a European 3kg order one penny under the threshold pays the full £7.49
+                  3.0       | european      | 120.00     | 0.00          | true         | a lowercase european order qualifies — zone matching is case-insensitive
                   3.0       | INTERNATIONAL | 500.00     | 12.48         | false        | an International order never qualifies, regardless of order total
                 """)
-        void freeShippingAppliesOnlyToQualifyingDomesticOrders(
+        void freeShippingAppliesOnlyToQualifyingDomesticAndEuropeanOrders(
                 String weightKg, String zone, String orderTotal,
                 String expectedTotal, boolean freeShipping, String description) {
             ShippingCost cost = service.calculate(

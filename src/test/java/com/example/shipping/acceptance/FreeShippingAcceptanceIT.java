@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@DisplayName("Free shipping on qualifying domestic orders")
+@DisplayName("Free shipping on qualifying domestic and European orders")
 class FreeShippingAcceptanceIT {
 
     @Autowired
@@ -34,21 +34,23 @@ class FreeShippingAcceptanceIT {
     }
 
     @Nested
-    @DisplayName("Must waive shipping (total cost = £0.00) only when the order is Domestic, its order total is at least £75.00, and the parcel weighs 20kg or less")
+    @DisplayName("Must waive shipping (total cost = £0.00) only when the order is Domestic or European, its order total is at least £50.00, and the parcel weighs 20kg or less")
     class FreeShippingQualification {
 
         @ParameterizedTest(name = "The one where a {0}kg {1} order of £{2} costs £{3}")
         @CsvSource({
                 // weight, zone,          orderTotal, totalCost
                 "3.0,  DOMESTIC,      120.00, 0.00",   // qualifies
-                "3.0,  DOMESTIC,      75.00,  0.00",   // boundary: exactly £75 qualifies
-                "3.0,  DOMESTIC,      74.99,  4.99",   // one penny under, pays
+                "3.0,  DOMESTIC,      50.00,  0.00",   // boundary: exactly £50 qualifies
+                "3.0,  DOMESTIC,      49.99,  4.99",   // one penny under, pays
                 "20.0, DOMESTIC,      120.00, 0.00",   // boundary: 20kg still qualifies
                 "25.0, DOMESTIC,      120.00, 11.49",  // over 20kg, pays despite qualifying total
-                "3.0,  EUROPEAN,      200.00, 7.49",   // non-domestic never qualifies
-                "3.0,  INTERNATIONAL, 500.00, 12.48",  // non-domestic never qualifies
+                "3.0,  EUROPEAN,      120.00, 0.00",   // European now qualifies
+                "3.0,  EUROPEAN,      50.00,  0.00",   // boundary: exactly £50 qualifies
+                "3.0,  EUROPEAN,      49.99,  7.49",   // one penny under, pays
+                "3.0,  INTERNATIONAL, 500.00, 12.48",  // International never qualifies
         })
-        void freeShippingAppliesOnlyToQualifyingDomesticOrders(
+        void freeShippingAppliesOnlyToQualifyingDomesticAndEuropeanOrders(
                 String weightKg, String zone, String orderTotal, String expectedTotal) {
             assertThat(calculate(weightKg, zone, orderTotal))
                     .hasStatusOk()

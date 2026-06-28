@@ -62,3 +62,6 @@ out/
 
 ### Mac ###
 .DS_Store
+
+### Generated reports ###
+quality-report.md

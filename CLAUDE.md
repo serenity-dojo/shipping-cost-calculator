@@ -23,19 +23,19 @@ A Spring Boot REST service built and tested with Gradle.
 
 ## Architecture
 
-Standard Spring Boot layered architecture. Keep it simple — controller calls service, service uses models:
+Standard Spring Boot layered architecture: `controller/` (REST, no logic) →
+`service/` (business logic, runs without a Spring context) → `model/` (data, no
+logic) → `repository/` (data access, only when a database is present).
+Dependencies flow one way: controller → service → model.
 
-- **controller/** — REST endpoints. Receives requests, delegates to a service, returns responses. No business logic.
-- **service/** — All business logic and orchestration. Testable without a Spring context. Keeps HTTP and persistence concerns out.
-- **model/** — Domain objects, request/response DTOs, enums, value objects. Immutable where practical; no business logic.
-- **repository/** — Data access. Only present when the project uses a database.
-
-Layer rules: controllers never contain business logic; services never import controller-layer or web types; models hold data, not logic. The `architecture-guardian` agent enforces these boundaries.
+The detailed rule for each layer loads automatically when you edit a file in it
+(see `.claude/rules/*-rules.md`), and the `architecture-guardian` agent audits the
+same boundaries on demand.
 
 <!-- ADAPT: If you use a different style (hexagonal: ports/adapters/domain,
      clean architecture: entities/usecases/interfaces, modular monolith,
-     microservices), replace the layers and rules above to describe it, and
-     update .claude/agents/architecture-guardian.md to match. -->
+     microservices), describe it here, rewrite the layer globs and bodies in
+     .claude/rules/, and update .claude/agents/architecture-guardian.md to match. -->
 
 ## Processing Order
 
@@ -52,8 +52,9 @@ For money and other exact decimal values:
 
 - Use `BigDecimal` — never `double` or `float`.
 - Scale: 2 decimal places. Rounding: `RoundingMode.HALF_UP`.
-- Compare with `compareTo()`, not `equals()` (`BigDecimal` is scale-sensitive).
-- Assert exact values in tests — no floating-point tolerance.
+
+This is the production-wide invariant. How to assert money in tests (`compareTo`,
+exact values) lives in `.claude/rules/test-rules.md`.
 
 <!-- ADAPT: Adjust the scale and rounding mode to your domain's rules. Delete
      this whole section if the project handles no exact decimal values. -->
@@ -83,21 +84,20 @@ Response 200:
 
 ## Testing Conventions
 
-Two tiers of tests:
+Two tiers: **acceptance tests** (`src/test/java/.../acceptance/`,
+`@SpringBootTest` + `MockMvc`, one class per feature, full HTTP cycle) and
+**service / unit tests** (plain JUnit 6, no Spring context, business logic
+directly). Acceptance verifies the HTTP contract; service tests verify logic —
+don't duplicate assertions across both.
 
-- **Acceptance tests** (`src/test/java/.../acceptance/`): `@SpringBootTest` + `MockMvc`. One test class per feature. Test the full HTTP request/response cycle.
-- **Service / unit tests** (`src/test/java/.../service/`): Plain JUnit 6, no Spring context. Test business logic directly.
+Run the suite with `./gradlew test`. The `/accept` and `/tdd` workflows run it for
+you each cycle, so you watch every test go red then green. The detailed test
+conventions (naming, `@DisplayName`, money assertions, tier choice) load from
+`.claude/rules/test-rules.md` when you edit a test.
 
-Conventions:
-
-- Test method names describe the business rule (`domesticOrderOver75GetsFreeShipping`), not a number (`testCalculate3`).
-- Use `@DisplayName` with plain-language, Example-Mapping-style descriptions: `"The one where a 3kg European parcel costs £7.49"`.
-- Acceptance tests verify the HTTP contract; service tests verify business logic. Don't duplicate the same assertions across both tiers.
-- Run the suite with `./gradlew test`. The `/accept` and `/tdd` workflows run it for you as part of each cycle, so you see each test go red and green yourself.
-
-<!-- ADAPT: Change the test directories, the build command, and the example
-     names if your conventions differ. Keep the two-tier structure — the
-     agents and commands assume it. -->
+<!-- ADAPT: Change the test directories and build command if they differ, and
+     edit the conventions in .claude/rules/test-rules.md. Keep the two-tier
+     structure — the agents and commands assume it. -->
 
 ## Spec Files
 
@@ -134,5 +134,3 @@ workflows, not in a hook, so each red/green step stays visible.
      Gradle, and add your sensitive paths to protect-files.sh. Keep the .claude/
      structure, the hook exit-2-to-block convention, the $ARGUMENTS placeholder
      in commands, and docs/specs/. -->
-
----

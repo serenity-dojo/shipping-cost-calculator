@@ -3,7 +3,7 @@
 **As a <role>, I want <capability> so that <benefit>.**
 
 <!--
-  House style for doc/specs/. Keep this structure for every spec:
+  House style for docs/specs/. Keep this structure for every spec:
     - H1 title (Title Case), then the user story in bold on one line.
     - One "## Rules and Examples" section holding every rule.
     - One "### Rule: Must/Should …" per rule, separated by a "---" rule line.

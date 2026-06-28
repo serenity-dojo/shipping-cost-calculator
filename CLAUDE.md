@@ -124,32 +124,15 @@ Spring Security is commented out in `build.gradle` until needed. Adding it locks
 
 ## The `.claude/` Toolchain
 
-The reusable part of the starter — works for any domain:
+A test-first workflow: `/discover` (idea → spec) → `/accept` (failing acceptance
+test) → `/tdd` (drive it green), reviewed by the `spec-compliance` and
+`architecture-guardian` agents and guarded by a PreToolUse hook
+(`.claude/hooks/protect-files.sh`). Tests run inside the `/accept` and `/tdd`
+workflows, not in a hook, so each red/green step stays visible.
 
-- **`.claude/settings.json`** — One hook: a file guard (PreToolUse) that blocks edits to sensitive files. Tests are run by the `/accept` and `/tdd` workflows, not by hooks, so the red/green steps of the cycle stay visible.
-- **`.claude/hooks/protect-files.sh`** — Blocks edits to sensitive files via `PROTECTED_PATTERNS`.
-- **`.claude/commands/`** — `/discover` (rule → example → counter-example → edge cases → questions), `/accept` (acceptance test against the real endpoint), `/tdd` (failing test → minimum code → verify → refactor).
-- **`.claude/agents/`** — `spec-compliance` (specs have tests, precision, feature interactions, API contract) and `architecture-guardian` (layer boundaries).
-
-<!-- ADAPT: Change the test command in the /accept and /tdd workflows if you
-     don't use Gradle. Add your sensitive files to protect-files.sh. Update the domain-specific
-     content in the command and agent files. Keep the .claude/ structure, the
-     hook exit-code convention (exit 2 to block), the $ARGUMENTS placeholder in
-     commands, and docs/specs/. -->
+<!-- ADAPT: Swap the Gradle test command in /accept and /tdd if you don't use
+     Gradle, and add your sensitive paths to protect-files.sh. Keep the .claude/
+     structure, the hook exit-2-to-block convention, the $ARGUMENTS placeholder
+     in commands, and docs/specs/. -->
 
 ---
-
-<!-- ADAPT: Everything below is the shipping cost calculator that ships with
-     this starter as a reference. It shows the level of detail that helps
-     Claude. Delete it once the sections above describe your own domain. -->
-
-## Worked Example — Shipping Cost Calculator
-
-A Spring Boot REST service that calculates shipping costs based on parcel weight, destination zone, and order value.
-
-- **Architecture:** `controller/` (REST, no logic) → `service/` (`ShippingCostService`, pure calculation, no DB) → `model/` (`ShippingRequest`, `ShippingCost`, enums `WeightTier`, `DistanceZone`).
-- **Processing order:** (1) base rate from weight tier → (2) zone multiplier (domestic ×1.0, European ×1.5, international ×2.5) → (3) free-shipping check (domestic order total ≥ £75.00 → £0.00). The order matters; every spec and test follows it.
-- **Money:** `BigDecimal`, scale 2, `RoundingMode.HALF_UP`, compare with `compareTo()`.
-- **API:** `POST /api/shipping/calculate` taking `{ weightKg, zone, orderTotal }` and returning `{ totalCost, breakdown: { baseRate, zoneMultiplier, zonedRate, freeShippingApplied } }`.
-- **Spec files:** `weight-tiers.specs.md`, `distance-zones.specs.md`, `free-shipping.specs.md`, `api-security.specs.md`.
-- **Security:** `X-API-Key` header; `USER` can calculate, `ADMIN` can also `GET /api/admin/rates`. No key → 401, invalid → 401, wrong role → 403. Swagger excluded from auth.

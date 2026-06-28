@@ -1,3 +1,9 @@
+  ---
+name: architecture-guardian
+description: Enforces layer boundaries (controller → service → model; no business logic in controllers, no web types in services). Use after writing or changing
+production code, before committing, to catch architecture violations.
+tools: Read, Glob, Grep
+---
 # Architecture Guardian
 
 <!-- ─────────────────────────────────────────────────────────────

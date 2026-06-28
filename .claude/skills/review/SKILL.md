@@ -21,8 +21,8 @@ Review all uncommitted changes: both staged (`git diff --cached`) and unstaged (
 ## Context
 
 Read CLAUDE.md for project architecture rules and testing conventions.
-If an OpenAPI spec exists in `doc/api/` for the feature under review, read it — the implementation must match the contract.
-If an Example Mapping spec exists in `doc/specs/`, read it — the test assertions must match the spec examples.
+If an OpenAPI spec exists in `docs/api/` for the feature under review, read it — the implementation must match the contract.
+If an Example Mapping spec exists in `docs/specs/`, read it — the test assertions must match the spec examples.
 Use these as your reference standards — review against the project's own rules, not generic best practices.
 
 ## What to Check

@@ -4,10 +4,10 @@ model: claude-sonnet-4-6
 allowed-tools: Read, Write, Edit, Bash
 description: >-
   Write a failing acceptance test for the NEXT spec rule (Step 2 of the
-  development process). Use after a spec in doc/specs/ is finalised and before
+  development process). Use after a spec in docs/specs/ is finalised and before
   any production code is written for that rule. One rule at a time — the test
   must fail for the right reason.
-argument-hint: "<rule name> @doc/specs/<feature>.md"
+argument-hint: "<rule name> @docs/specs/<feature>.md"
 ---
 
 Write a failing acceptance test for: $ARGUMENTS

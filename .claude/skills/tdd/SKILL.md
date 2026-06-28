@@ -10,41 +10,37 @@ description: >-
 argument-hint: "<test class or method to drive> [--to-green <acceptance test>]"
 ---
 
-Run ONE inner TDD cycle for: $ARGUMENTS — one failing test driven to green, then
+Run ONE inner TDD cycle for: $ARGUMENTS — one failing test driven to green,
 refactored, then STOP.
 
-"ONE cycle" means **one test**: a single new `@Test`, or one new row/case added
-to a parameterized test (a new boundary is the next RED — add a row, don't spawn
-a class). It does NOT mean "drive until the acceptance test passes" — that outer
-ATDD loop usually takes several inner cycles across several invocations, and the
-acceptance test stays red until the last one. After this cycle, stop and wait;
-the edge case you propose in CHALLENGE becomes the next RED in a *new* invocation.
-(The one exception is run-to-green mode — see ESCAPE below — which the user must
-ask for explicitly with `--to-green`; never assume it.)
+**One cycle = one test:** a single new `@Test`, or one new row/case added to a
+parameterized test (a new boundary is the next RED — add a row, don't spawn a
+class). It is *not* "drive until the acceptance test passes" — that's the outer
+loop, described next. The edge case you propose in CHALLENGE becomes the next RED
+in a *new* invocation. The sole exception is run-to-green mode (see ESCAPE),
+which the user must request explicitly with `--to-green`; never assume it.
 
 Read CLAUDE.md for architecture and testing conventions before writing any code.
 
-**Where this fits — the double loop.** This is the *inner* loop. It usually runs
-inside an outer ATDD loop: `/accept` has written one failing acceptance test for
-the spec rule, and that test is your **goalpost, not your target**. Your job is
-not to make it green in one cycle — it's to drive the sub-rules beneath it
-through RED → GREEN → REFACTOR at the lowest tier that proves each, until the
-acceptance test goes green *as a result*. Expect it to stay red across several
-cycles; never weaken it to get an early green. The acceptance test documents the
-end-to-end behaviour as living documentation; your inner cycles drive the logic
-beneath it. Invoked without an outer
-acceptance test (driving a value object or service rule directly), the same loop
-applies — there's just no outer goalpost.
+**The double loop.** This is the *inner* loop, usually run inside an outer ATDD
+loop: `/accept` has written one failing acceptance test for the spec rule, and
+that test is your **goalpost, not your target**. Your job isn't to make it green
+in one cycle — it's to drive the sub-rules beneath it through RED → GREEN →
+REFACTOR at the lowest tier that proves each, until the acceptance test goes
+green *as a result*. Expect it to stay red across several cycles, and never
+weaken it to force an early green — it's living documentation of the end-to-end
+behaviour. Invoked without an outer acceptance test (driving a value object or
+service rule directly), the same loop applies — there's just no outer goalpost.
 
 ## AIM — choose the tier before you write the test
 
 Decide the **lowest tier that can prove this rule** before writing the test —
 see the tier table in `test-patterns.md` ("Pick the tier deliberately"), and read
 that file's compiled example for the tier you pick before writing the RED test.
-Pure logic — a calculation, a
-classification, parsing, rounding — belongs in a service or value-object test
-with no Spring context. Reach for a slice or full-context test only to prove
-wiring you can't prove otherwise (HTTP mapping, serialization, security).
+Pure logic — a calculation, a classification, parsing, rounding — belongs in a
+service or value-object test with no Spring context. Reach for a slice or
+full-context test only to prove wiring you can't prove otherwise (HTTP mapping,
+serialization, security).
 
 If the behaviour you're about to drive is a *branch inside* a method an
 acceptance test already covers — case-folding, a null guard, a default case, a
@@ -89,10 +85,10 @@ All tests are green. Now improve the code:
 - Push *exhaustive* coverage down, not documentation. Once you've proven a rule's
   boundaries and edge cases at a lower tier, keep the full **enumeration** there —
   don't re-run every boundary through the whole stack. But **keep at least one
-  clear, representative example of each rule at the acceptance tier**: it's living
-  documentation and must still read as the feature's executable specification.
-  Overlap on that headline example is intentional, not duplication to remove.
-  Inner loops own the exhaustive logic; the acceptance suite documents the rules.
+  clear, representative example of each rule at the acceptance tier**: that
+  headline example is the feature's executable specification, and the overlap is
+  intentional, not duplication to remove. Inner loops own the exhaustive logic;
+  the acceptance suite documents the rules.
 
 Run ALL tests after refactoring — not just the current one.
 If anything breaks, fix it before moving on.
@@ -130,12 +126,10 @@ Report what you changed:
 - Any design pressure you noticed in LISTEN, and the refactor you propose
 - What edge case you propose next, and the tier it belongs at
 
-Do NOT write additional tests beyond the one specified.
-Do NOT add unrequested features or "improvements".
-Do NOT modify any existing test to make it pass — fix the production code instead.
-Do NOT weaken the outer acceptance test to get an early green.
-
-Wait for the user before starting the next cycle.
+Then wait for the user before starting the next cycle. For this cycle:
+- Write only the one test specified — no extra tests, features, or "improvements".
+- Don't modify an existing test to make it pass — fix the production code instead.
+- Don't weaken the outer acceptance test (see *the double loop*).
 
 ## ESCAPE — run-to-green mode (opt-in only)
 
@@ -145,7 +139,8 @@ run inner cycles back-to-back without pausing, until that acceptance test goes
 green. Only the per-cycle STOP relaxes; the discipline does not:
 
 - Each cycle still runs AIM → RED → GREEN → REFACTOR → LISTEN in full, at the
-  lowest tier that proves its rule.
+  lowest tier that proves its rule, and the outer test is never weakened to reach
+  green (see *the double loop*).
 - CHALLENGE self-feeds: pick the next edge case yourself and make it the next
   RED, instead of waiting for approval.
 - Stop early and hand back to the user if any of these hold: the acceptance test
@@ -153,7 +148,6 @@ green. Only the per-cycle STOP relaxes; the discipline does not:
   surfaces a design change big enough to warrant a real extraction — never
   perform a large refactor unattended, that is the one thing escape mode still
   pauses for.
-- Never weaken the acceptance test to reach green.
 - Report once at the end: every cycle run (test + tier), the production code
   written, the refactors done, and any design pressure deferred for the user.
 

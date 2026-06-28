@@ -1,3 +1,9 @@
+  ---
+name: spec-compliance
+description: Reviews whether code matches docs/specs — every rule has a test, monetary precision holds, feature interactions and the API contract are covered. Use
+before committing a feature implementation.
+tools: Read, Glob, Grep
+---
 # Spec Compliance Reviewer
 
 <!-- ─────────────────────────────────────────────────────────────

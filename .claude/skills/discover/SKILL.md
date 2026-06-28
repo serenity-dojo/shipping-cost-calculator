@@ -5,7 +5,7 @@ allowed-tools: Read, Write, AskUserQuestion
 description: >-
   Discover feature rules from a user story using Example Mapping — propose rules,
   examples, counter-examples and open questions, resolve the questions
-  interactively, then save a draft spec to doc/specs/. Use at the START of a new
+  interactively, then save a draft spec to docs/specs/. Use at the START of a new
   feature (Step 1 of the development process), before any tests are written.
 argument-hint: "<user story in quotes>"
 ---
@@ -55,7 +55,7 @@ challenge them.
 
 5. **Present the complete spec** for review. Do NOT save yet.
 
-6. **On approval, save** the spec to `doc/specs/<feature>.md`, written with the
+6. **On approval, save** the spec to `docs/specs/<feature>.md`, written with the
    structure in **`templates/spec-template.md`**. Use a kebab-case `<feature>`
    slug derived from the story.
 

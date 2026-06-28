@@ -35,7 +35,6 @@ PROTECTED_PATTERNS=(
   ".env"               # secrets
   ".pem" ".key" ".jks" # credentials & keystores
   ".github/workflows"  # CI pipelines
-#  ".claude/"           # Claude's own guardrails
 )
 
 for pattern in "${PROTECTED_PATTERNS[@]}"; do

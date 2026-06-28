@@ -25,6 +25,7 @@ class FreeShippingAcceptanceIT {
 
     private MvcTestResult calculate(String weightKg, String zone, String orderTotal) {
         return mvc.post().uri("/api/shipping/calculate")
+                .header("X-API-Key", "test-user-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         { "weightKg": %s, "zone": "%s", "orderTotal": %s }
@@ -85,6 +86,7 @@ class FreeShippingAcceptanceIT {
         @DisplayName("The one where the order total is missing — rejected as an invalid request")
         void missingOrderTotalIsRejected() {
             MvcTestResult result = mvc.post().uri("/api/shipping/calculate")
+                    .header("X-API-Key", "test-user-key")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                             { "weightKg": 3.0, "zone": "DOMESTIC" }

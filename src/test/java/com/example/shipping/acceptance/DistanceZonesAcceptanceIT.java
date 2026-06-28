@@ -25,6 +25,7 @@ class DistanceZonesAcceptanceIT {
 
     private MvcTestResult calculate(String weightKg, String zone) {
         return mvc.post().uri("/api/shipping/calculate")
+                .header("X-API-Key", "test-user-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         { "weightKg": %s, "zone": "%s", "orderTotal": 10.00 }
@@ -62,6 +63,7 @@ class DistanceZonesAcceptanceIT {
         @DisplayName("The one where the zone is missing — rejected the same as an unknown value, not defaulted")
         void missingZoneIsRejected() {
             MvcTestResult result = mvc.post().uri("/api/shipping/calculate")
+                    .header("X-API-Key", "test-user-key")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                             { "weightKg": 3.0, "orderTotal": 10.00 }
@@ -74,6 +76,7 @@ class DistanceZonesAcceptanceIT {
         @DisplayName("The one where the zone is empty — rejected the same as an unknown value, not defaulted")
         void emptyZoneIsRejected() {
             MvcTestResult result = mvc.post().uri("/api/shipping/calculate")
+                    .header("X-API-Key", "test-user-key")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                             { "weightKg": 3.0, "zone": "", "orderTotal": 10.00 }

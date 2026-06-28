@@ -27,6 +27,7 @@ class WeightTiersAcceptanceIT {
 
     private MvcTestResult calculate(String weightKg) {
         return mvc.post().uri("/api/shipping/calculate")
+                .header("X-API-Key", "test-user-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         { "weightKg": %s, "zone": "DOMESTIC", "orderTotal": 10.00 }
